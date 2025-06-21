@@ -13,7 +13,7 @@ app = FastAPI(
     description="Affiliate service for hotels, flights, cars, and insurance",
     version="1.0.0"
 )
-# app.add_middleware(AuthMiddleware)
+app.add_middleware(AuthMiddleware)
 
 # # Allow CORS for local development
 # # app.add_middleware(
