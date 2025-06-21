@@ -18,6 +18,7 @@ def log_supabase(event_type, query, request):
     try:
         supabase.table("search_logs").insert({
             "user_id": request.headers.get("X-User-ID", "anonymous"),
+            "channel": request.headers.get("X-Channel", "NA"),
             "type": event_type,
             "query": query,
             "created_at": datetime.utcnow().isoformat()
