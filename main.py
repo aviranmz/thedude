@@ -1,4 +1,5 @@
 # main.py
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request
@@ -6,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from app.routers.flights import router as flight_router
 from app.routers.hotels import router as hotel_router
+from app.routers.esim import router as esim_router
 from app.routers.cars import router as cars_router
 from app.routers.insurance import router as insurance_router
 from app.routers.redirect import router as redirect_router
@@ -32,7 +34,10 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
-app.add_middleware(AuthMiddleware)
+
+if os.getenv("ENV") != "local":
+    from app.utils.auth import AuthMiddleware
+    app.add_middleware(AuthMiddleware)
 
 # # Allow CORS for local development
 # # app.add_middleware(
@@ -48,4 +53,5 @@ app.include_router(flight_router)
 app.include_router(hotel_router)
 app.include_router(cars_router)
 app.include_router(insurance_router)
+app.include_router(esim_router)
 app.include_router(redirect_router)
