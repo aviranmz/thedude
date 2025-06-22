@@ -11,6 +11,7 @@ from app.routers.insurance import router as insurance_router
 from app.routers.redirect import router as redirect_router
 from app.utils.auth import AuthMiddleware
 from fastapi.staticfiles import StaticFiles
+import logging
 
 app = FastAPI(
     title="Dude MCP Affiliate API",
@@ -25,6 +26,11 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/home.html", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("home.html", {"request": request})
+
+logging.basicConfig(
+    level=logging.INFO,  # or DEBUG
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 app.add_middleware(AuthMiddleware)
 
