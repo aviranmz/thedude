@@ -1,18 +1,31 @@
 # main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from app.routers.flights import router as flight_router
 from app.routers.hotels import router as hotel_router
 from app.routers.cars import router as cars_router
 from app.routers.insurance import router as insurance_router
 from app.routers.redirect import router as redirect_router
 from app.utils.auth import AuthMiddleware
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="Dude MCP Affiliate API",
     description="Affiliate service for hotels, flights, cars, and insurance",
     version="1.0.0"
 )
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/home.html", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
+
 app.add_middleware(AuthMiddleware)
 
 # # Allow CORS for local development

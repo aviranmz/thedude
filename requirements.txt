@@ -7,3 +7,4 @@ elasticsearch
 pydantic
 apscheduler
 python-telegram-bot
+jinja2
