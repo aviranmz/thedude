@@ -5,6 +5,14 @@ import logging
 API_V1_URL = "https://api.travelpayouts.com/v1/prices/cheap"
 API_V2_URL = "https://api.travelpayouts.com/v2/prices/latest"
 
+def parse_date_flexibly(date_str):
+    for fmt in ("%d%m%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Date format not recognized: {date_str}")
+
 async def search_flights(origin, destination, date, return_date ="", affiliate ={}):
     headers = {
         "X-Access-Token": affiliate["api_key"]
@@ -12,11 +20,15 @@ async def search_flights(origin, destination, date, return_date ="", affiliate =
 
     try:
         # Format date into YYYY-MM for the API
-        parsed_date = datetime.strptime(date, "%d%m%Y")
-        depart_date = parsed_date.strftime("%Y-%m")
+        depart_date = ""
         depart_return_date = ""
-        if (return_date != ""):
-            parsed_return_date = datetime.strptime(return_date, "%d%m%Y")
+
+        if date:
+            parsed_date = parse_date_flexibly(date)
+            depart_date = parsed_date.strftime("%Y-%m")
+
+        if return_date:
+            parsed_return_date = parse_date_flexibly(return_date)
             depart_return_date = parsed_return_date.strftime("%Y-%m")
 
         # Decide which Travelpayouts API to use
