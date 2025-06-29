@@ -99,6 +99,18 @@ async def mcp_status(request: Request):
 def get_tool_list():
     return {"tools": ["flight", "hotel", "car", "insurance", "esim"]}
 
+@app.options("/agent-stream")
+async def options_handler_stream():
+    return Response(headers={"Allow": "OPTIONS, POST, GET"}, status_code=204)
+
+@app.post("/agent-stream")
+async def agent_stream_post(request: Request):
+    data = await request.json()
+    user_id = data.get("user_id")
+    message = data.get("message")
+    channel = data.get("channel", "telegram")
+    return await agent_stream(user_id=user_id, message=message, channel=channel)
+
 @app.get("/agent-stream")
 async def agent_stream(user_id: int, message: str, channel: str = "telegram"):
     async def event_generator():
