@@ -121,7 +121,7 @@ async def agent_stream(user_id: int, message: str, channel: str = "telegram"):
         async def keep_alive():
             while processing:
                 await queue.put(f"data: 🟢 keep-alive {datetime.utcnow().isoformat()}\n\n")
-                await asyncio.sleep(15)
+                await asyncio.sleep(10)
 
         # 📦 Main processing logic
         async def main_flow():
