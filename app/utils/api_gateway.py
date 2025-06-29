@@ -12,6 +12,11 @@ async def call_trip_api(info):
     children = info.get("children", 0)
 
     base_url = os.getenv("BASE_DOMAIN", "https://yourdomain.com")
+    
+    headers = {
+        "Authorization": f"Bearer {os.getenv('API_KEY', 'your_api_key')}",
+        "Content-Type": "application/json"
+    }
 
     flight_results = []
     hotel_results = []
@@ -26,7 +31,7 @@ async def call_trip_api(info):
                 "return_date": return_date or ""
             }
             try:
-                flight_resp = await client.get(f"{base_url}/search/flights", params=flight_params)
+                flight_resp = await client.get(f"{base_url}/search/flights", params=flight_params, headers=headers)
                 flight_results = flight_resp.json() if flight_resp.status_code == 200 else []
             except Exception as e:
                 logging.error(f"Flight search failed: {e}")
@@ -43,7 +48,7 @@ async def call_trip_api(info):
                 "limit": 5
             }
             try:
-                hotel_resp = await client.get(f"{base_url}/search/hotels", params=hotel_params)
+                hotel_resp = await client.get(f"{base_url}/search/hotels", params=hotel_params, headers=headers)
                 hotel_results = hotel_resp.json() if hotel_resp.status_code == 200 else []
             except Exception as e:
                 logging.error(f"Hotel search failed: {e}")
