@@ -97,7 +97,7 @@ async def mcp_status(request: Request):
 
 @app.get("/tools")
 def get_tool_list():
-    return {"tools": ["flight", "hotel", "car", "insurance", "esim"]}
+    return ["flight", "hotel", "car", "insurance", "esim"]
 
 @app.options("/agent-stream")
 async def options_handler_stream():
