@@ -39,4 +39,16 @@ async def handle_user_request(data):
     if trip_info.get("updated_prefs"):
         await save_user_preferences(user_id, trip_info["updated_prefs"])
 
-    return {"reply": reply}
+    return {
+        "reply": reply,
+        "can_search": trip_info.get("complete", False),
+        "search_types": trip_info.get("type", []),
+        "missing_fields": trip_info.get("missing_fields", []),
+        "flights": results.get("flights", []),
+        "hotels": results.get("hotels", []),
+        "origin": trip_info.get("origin"),
+        "destination": trip_info.get("destination"),
+        "dates": trip_info.get("dates", {}),
+        "adults": trip_info.get("adults", 1),
+        "children": trip_info.get("children", 0)
+    }
