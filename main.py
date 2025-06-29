@@ -3,6 +3,7 @@
 # ==============================
 import asyncio
 from datetime import datetime
+from http.client import HTTPException
 import json
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -96,7 +97,10 @@ async def mcp_status(request: Request):
 
 
 @app.get("/tools")
-def get_tool_list():
+async def get_tools(authorization: str = Header(None)):
+    print("GET /tools called")
+    if authorization != "Bearer supersecretkey123":
+        raise HTTPException(status_code=401, detail="Unauthorized")
     return ["flight", "hotel", "car", "insurance", "esim"]
 
 @app.options("/agent-stream")
