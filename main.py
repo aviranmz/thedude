@@ -5,6 +5,7 @@ import asyncio
 from datetime import datetime
 from http.client import HTTPException
 import json
+from aiohttp import request
 from fastapi.params import Header
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -99,14 +100,20 @@ async def mcp_status(request: Request):
 
 @app.get("/tools")
 async def get_tools(
+    request: Request,
     authorization: Optional[str] = Header(None),
     Authorization: Optional[str] = Header(None)
 ):
+    print("HEADERS:", dict(request.headers))
+
     token = authorization or Authorization    
-    print("GET /tools called")
+    print("GET /tools called, token:", token)
+
     if token != "Bearer supersecretkey123":
         raise HTTPException(status_code=401, detail="Unauthorized")
+    
     return ["flight", "hotel", "car", "insurance", "esim"]
+
 
 @app.options("/agent-stream")
 async def options_handler_stream():
