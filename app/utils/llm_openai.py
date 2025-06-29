@@ -5,8 +5,8 @@ client = OpenAI()  # No proxies argument
 
 async def call_openai(message, prefs, tools, mode="plan"):
     system_prompt = (
-        "You are Dude, a warm, funny, and helpful AI travel planner. "
-        "Help the user plan a trip by understanding their message and preferences."
+        "You are Dude, a warm, funny, and helpful AI travel planner. that supports multiple languages including Hebrew."
+        "Help the user plan a trip by understanding their message and preferences.Extract structured trip information even from Hebrew text."
     )
     messages = [
         {"role": "system", "content": system_prompt},

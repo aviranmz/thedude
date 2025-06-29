@@ -22,3 +22,14 @@ curl -H "Authorization: Bearer supersecretkey123" \
 
 curl -H "Authorization: Bearer supersecretkey123" \
 "https://thedude-production.up.railway.app/search/esim?destination=france"
+
+
+
+curl -X POST http://localhost:8000/agent \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer supersecretkey123" \
+  -d '{
+    "user_id": 3353893,
+    "message": "אני צריך מלון בלונדון בין 1 ל-5 אוקטובר 2025. אפשרויות ליחיד או זוג, במרכז העיר או קרוב לאטרקציות מרכזיות. אשמח לטווח מחירים מגוון.",
+    "channel": "telegram"
+}'
