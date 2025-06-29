@@ -11,6 +11,8 @@ from app.routers.esim import router as esim_router
 from app.routers.cars import router as cars_router
 from app.routers.insurance import router as insurance_router
 from app.routers.redirect import router as redirect_router
+from app.services.agent import handle_user_request
+from fastapi import FastAPI
 from app.utils.auth import AuthMiddleware
 from fastapi.staticfiles import StaticFiles
 import logging
@@ -24,6 +26,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 templates = Jinja2Templates(directory="templates")
+
+@app.post("/agent")
+async def travel_agent_entry(request: Request):
+    data = await request.json()
+    return await handle_user_request(data)
+
 
 @app.get("/home.html", response_class=HTMLResponse)
 async def home(request: Request):
