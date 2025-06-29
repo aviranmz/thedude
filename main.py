@@ -9,7 +9,7 @@ from aiohttp import request
 from fastapi.params import Header
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 
 class AgentRequest(BaseModel):
@@ -110,7 +110,8 @@ async def get_tools(
     print("GET /tools called")
     if token != "Bearer supersecretkey123":
         raise HTTPException(status_code=401, detail="Unauthorized")
-    return ["flight", "hotel", "car", "insurance", "esim"]
+    return JSONResponse(content={"tools": ["flight", "hotel", "car", "insurance", "esim"]})
+
 
 @app.options("/agent-stream")
 async def options_handler_stream():

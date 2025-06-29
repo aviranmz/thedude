@@ -10,3 +10,4 @@ python-telegram-bot
 jinja2
 openai
 aiohttp
+JSONResponse
