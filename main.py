@@ -1,4 +1,26 @@
 # main.py
+
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+
+class AgentRequest(BaseModel):
+    user_id: int
+    message: str
+    channel: Optional[str] = "telegram"
+
+class AgentResponse(BaseModel):
+    reply: str
+    can_search: bool
+    search_types: List[str]
+    missing_fields: List[str]
+    flights: List[Dict[str, Any]]
+    hotels: List[Dict[str, Any]]
+    origin: Optional[str]
+    destination: Optional[str]
+    dates: Dict[str, Optional[str]]
+    adults: int
+    children: int
+
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +49,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-@app.post("/agent")
+@app.post("/agent", response_model=AgentResponse)
 async def travel_agent_entry(request: Request):
     data = await request.json()
     return await handle_user_request(data)
