@@ -82,74 +82,99 @@ if os.getenv("ENV") != "local":
 async def travel_agent_entry(payload: AgentRequest):
     return await handle_user_request(payload.dict())
 
+
 @app.get("/agent-stream")
 async def agent_stream(user_id: int, message: str, channel: str = "telegram"):
     async def event_generator():
-        yield "data: ✅ Request received. Starting processing...\n\n"
-        await asyncio.sleep(0.5)
+        processing = True
+        queue = asyncio.Queue()
 
-        # Step 1: Load preferences
-        from app.utils.memory import get_user_preferences
-        prefs = await get_user_preferences(user_id)
-        yield f"data: 🗂️ Loaded preferences: {json.dumps(prefs)}\n\n"
-        await asyncio.sleep(0.5)
+        # 👂 Background keep-alive sender
+        async def keep_alive():
+            while processing:
+                await queue.put(f"data: 🟢 keep-alive {datetime.utcnow().isoformat()}\n\n")
+                await asyncio.sleep(15)
 
-        # Step 2: Extract trip info using LLM (partial stream if supported)
-        from app.utils.llm import extract_trip_info_stream
+        # 📦 Main processing logic
+        async def main_flow():
+            nonlocal processing
+            await queue.put("data: ✅ Request received. Starting processing...\n\n")
+            await asyncio.sleep(0.5)
 
-        update = None  # Initialize before the loop
+            # Step 1: Load user preferences
+            from app.utils.memory import get_user_preferences
+            prefs = await get_user_preferences(user_id)
+            await queue.put(f"data: 🗂️ Loaded preferences: {json.dumps(prefs)}\n\n")
+            await asyncio.sleep(0.5)
 
-        try:
-            async for step in extract_trip_info_stream(message, prefs):
-                update = step
-                yield f"data: {json.dumps(step, ensure_ascii=False)}\n\n"
-                await asyncio.sleep(0.05)
-        except Exception as e:
-            yield f"data: ❌ Error extracting trip info: {str(e)}\n\n"
-            yield "event: close\ndata: error\n\n"
-            return
+            # Step 2: Extract trip info
+            from app.utils.llm import extract_trip_info_stream
+            update = None
 
+            try:
+                async for step in extract_trip_info_stream(message, prefs):
+                    update = step
+                    await queue.put(f"data: {json.dumps(step, ensure_ascii=False)}\n\n")
+                    await asyncio.sleep(0.05)
+            except Exception as e:
+                await queue.put(f"data: ❌ Error extracting trip info: {str(e)}\n\n")
+                await queue.put("event: close\ndata: error\n\n")
+                processing = False
+                return
 
-        # Step 3: Once complete info is detected
-        trip_info = update.get("final_info", {}) if update else {}
+            trip_info = update.get("final_info", {}) if update else {}
 
-        trip_info = update.get("final_info")
-        if not trip_info or not trip_info.get("complete"):
-            yield f"data: ⚠️ Missing fields: {trip_info.get('missing_fields')}\n\n"
-            yield f"event: close\ndata: incomplete\n\n"
-            return
+            if not trip_info or not trip_info.get("complete"):
+                await queue.put(f"data: ⚠️ Missing fields: {trip_info.get('missing_fields')}\n\n")
+                await queue.put("event: close\ndata: incomplete\n\n")
+                processing = False
+                return
 
-        # Step 4: Call API gateway
-        yield "data: 🚀 Calling flight/hotel APIs...\n\n"
-        from app.utils.api_gateway import call_trip_api
-        results = await call_trip_api(trip_info)
+            # Step 4: Call API Gateway
+            await queue.put("data: 🚀 Calling flight/hotel APIs...\n\n")
+            from app.utils.api_gateway import call_trip_api
+            results = await call_trip_api(trip_info)
 
-        # Step 5: Stream response preview
-        reply = results.get("formatted_reply", "✅ Done, here are your options.")
-        yield f"data: 💬 Final reply: {reply}\n\n"
+            # Step 5: Stream final reply
+            reply = results.get("formatted_reply", "✅ Done, here are your options.")
+            await queue.put(f"data: 💬 Final reply: {reply}\n\n")
 
-        # Step 6: Full payload as JSON
-        response_data = {
-            "reply": reply,
-            "can_search": trip_info.get("complete", False),
-            "search_types": trip_info.get("type", []),
-            "missing_fields": trip_info.get("missing_fields", []),
-            "flights": results.get("flights", []),
-            "hotels": results.get("hotels", []),
-            "origin": trip_info.get("origin"),
-            "destination": trip_info.get("destination"),
-            "dates": trip_info.get("dates", {}),
-            "adults": trip_info.get("adults", 1),
-            "children": trip_info.get("children", 0)
-        }
+            # Step 6: Send structured response
+            response_data = {
+                "reply": reply,
+                "can_search": trip_info.get("complete", False),
+                "search_types": trip_info.get("type", []),
+                "missing_fields": trip_info.get("missing_fields", []),
+                "flights": results.get("flights", []),
+                "hotels": results.get("hotels", []),
+                "origin": trip_info.get("origin"),
+                "destination": trip_info.get("destination"),
+                "dates": trip_info.get("dates", {}),
+                "adults": trip_info.get("adults", 1),
+                "children": trip_info.get("children", 0)
+            }
+            await queue.put(f"data: {json.dumps(response_data, ensure_ascii=False)}\n\n")
+            await queue.put("event: close\ndata: end\n\n")
+            processing = False
 
-        yield f"data: {json.dumps(response_data, ensure_ascii=False)}\n\n"
-        yield "event: close\ndata: end\n\n"
+        # 🔁 Start both keep-alive and main logic in parallel
+        asyncio.create_task(keep_alive())
+        asyncio.create_task(main_flow())
+
+        # 🔄 Yield events from the queue
+        while True:
+            item = await queue.get()
+            if item is None:
+                break
+            yield item
 
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Content-Encoding": "identity"}
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Content-Encoding": "identity"
+        }
     )
 
 # 🔧 Respond to OPTIONS preflight (for n8n/parameter fetching)

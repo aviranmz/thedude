@@ -30,7 +30,6 @@ Extract the following fields:
 - If origin is missing in the user message, infer it from preferences["home_city"] if available.
 - If still missing, leave it blank and include "origin" in "missing_fields".
 
-
 🎯 Always return a valid JSON response like:
 {{
   "complete": true,
@@ -50,7 +49,7 @@ Extract the following fields:
     )
 
     yield {"stage": "llm_prompt_ready", "prompt_preview": prompt[:500] + "..."}
-    
+
     try:
         raw_response = await call_llm_agent(prompt, prefs, tools=["hotel", "flight", "car"], mode="plan")
         yield {"stage": "llm_response_received", "raw_response": raw_response}
@@ -61,14 +60,15 @@ Extract the following fields:
     try:
         cleaned = clean_json_response(raw_response)
         parsed = json.loads(cleaned)
-        if not parsed.get("origin") and prefs.get("home_city"):
-            parsed["origin"] = prefs["home_city"]
-            parsed.setdefault("updated_prefs", {})  # Ensure it's a dict
+        home_city = prefs.get("home_city")
+        if not parsed.get("origin") and home_city:
+            parsed["origin"] = home_city
+            parsed.setdefault("updated_prefs", {})
             parsed["updated_prefs"]["origin_inferred"] = True
+            if parsed.get("missing_fields") and "origin" in parsed["missing_fields"]:
+                parsed["missing_fields"].remove("origin")
+            yield {"stage": "inference_note", "note": f"Inferred origin from prefs: {home_city}"}
 
-        # Optional: update `missing_fields` if present
-        if parsed.get("missing_fields") and "origin" in parsed["missing_fields"]:
-            parsed["missing_fields"].remove("origin")
         yield {"stage": "trip_info_parsed", "data": parsed, "final_info": parsed}
     except Exception as e:
         yield {"stage": "error", "error": f"JSON parsing failed: {str(e)}"}
@@ -116,7 +116,14 @@ Extract the following fields:
     try:
         raw_response = await call_llm_agent(prompt, prefs, tools=["hotel", "flight", "car"], mode="plan")
         cleaned = clean_json_response(raw_response)
-        return json.loads(cleaned)
+        parsed = json.loads(cleaned)
+        if not parsed.get("origin") and prefs.get("home_city"):
+            parsed["origin"] = prefs["home_city"]
+            parsed.setdefault("updated_prefs", {})
+            parsed["updated_prefs"]["origin_inferred"] = True
+            if parsed.get("missing_fields") and "origin" in parsed["missing_fields"]:
+                parsed["missing_fields"].remove("origin")
+        return parsed
     except Exception as e:
         return {
             "complete": False,
