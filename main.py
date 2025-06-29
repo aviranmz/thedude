@@ -110,7 +110,7 @@ async def get_tools(
     print("GET /tools called")
     if token != "Bearer supersecretkey123":
         raise HTTPException(status_code=401, detail="Unauthorized")
-    return JSONResponse(content={"tools": ["flight", "hotel", "car", "insurance", "esim"]})
+    return {"tools": ["flight", "hotel", "car", "insurance", "esim"]}
 
 
 @app.options("/agent-stream")
