@@ -82,6 +82,17 @@ if os.getenv("ENV") != "local":
 async def travel_agent_entry(payload: AgentRequest):
     return await handle_user_request(payload.dict())
 
+@app.get("/status")
+async def mcp_status(request: Request):
+    # Example only — skip this in local or dev environments
+    token = request.headers.get("Authorization", "")
+    if not token or "supersecretkey123" not in token:
+        return Response(status_code=401)
+    return {
+        "status": "ok",
+        "tools": ["flight", "hotel", "car", "insurance", "esim"]
+    }
+
 
 @app.get("/agent-stream")
 async def agent_stream(user_id: int, message: str, channel: str = "telegram"):
