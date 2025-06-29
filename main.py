@@ -98,7 +98,7 @@ async def mcp_status(request: Request):
 def get_tool_list():
     return {"tools": ["flight", "hotel", "car", "insurance", "esim"]}
 
-@app.get("/sse")
+@app.get("/agent-stream")
 async def agent_stream(user_id: int, message: str, channel: str = "telegram"):
     async def event_generator():
         processing = True
