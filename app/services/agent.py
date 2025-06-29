@@ -31,6 +31,19 @@ async def handle_user_request(data):
     logging.info(f"DEBUG origin: {trip_info.get('origin')}")
     results = await call_trip_api(trip_info)
 
+    results = await call_trip_api(trip_info)
+
+    # ✅ Normalize flights/hotels to always be lists
+    flights = results.get("flights", [])
+    if not isinstance(flights, list):
+        logging.warning("Expected list for flights, got something else.")
+        flights = []
+
+    hotels = results.get("hotels", [])
+    if not isinstance(hotels, list):
+        logging.warning("Expected list for hotels, got something else.")
+        hotels = []
+
     # Step 6: Format response and log
     reply = results.get("formatted_reply", "Here are your trip details!")
     await log_interaction(user_id, reply, "output")
@@ -39,13 +52,14 @@ async def handle_user_request(data):
     if trip_info.get("updated_prefs"):
         await save_user_preferences(user_id, trip_info["updated_prefs"])
 
+    # ✅ Final MCP-compatible return
     return {
         "reply": reply,
         "can_search": trip_info.get("complete", False),
         "search_types": trip_info.get("type", []),
         "missing_fields": trip_info.get("missing_fields", []),
-        "flights": results.get("flights", []),
-        "hotels": results.get("hotels", []),
+        "flights": flights,
+        "hotels": hotels,
         "origin": trip_info.get("origin"),
         "destination": trip_info.get("destination"),
         "dates": trip_info.get("dates", {}),
