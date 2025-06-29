@@ -1,6 +1,7 @@
 fastapi
-uvicorn[standard]  # includes 'watchgod', 'httptools', 'uvloop', etc.
+uvicorn[standard]
 httpx
+aiohttp
 python-dotenv
 supabase
 elasticsearch
@@ -9,5 +10,4 @@ apscheduler
 python-telegram-bot
 jinja2
 openai
-aiohttp
-JSONResponse
+python-multipart  # optional, for form/file handling
