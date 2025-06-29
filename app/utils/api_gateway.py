@@ -1,3 +1,4 @@
+import os
 import httpx
 import logging
 
@@ -10,7 +11,7 @@ async def call_trip_api(info):
     adults = info.get("adults", 1)
     children = info.get("children", 0)
 
-    base_url = "http://localhost:8000"
+    base_url = os.getenv("BASE_DOMAIN", "https://yourdomain.com")
 
     flight_results = []
     hotel_results = []
