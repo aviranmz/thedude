@@ -104,16 +104,13 @@ async def get_tools(
     authorization: Optional[str] = Header(None),
     Authorization: Optional[str] = Header(None)
 ):
-    print("HEADERS:", dict(request.headers))
+    print("HEADERS:", request.headers)
 
     token = authorization or Authorization    
-    print("GET /tools called, token:", token)
-
+    print("GET /tools called")
     if token != "Bearer supersecretkey123":
         raise HTTPException(status_code=401, detail="Unauthorized")
-    
     return ["flight", "hotel", "car", "insurance", "esim"]
-
 
 @app.options("/agent-stream")
 async def options_handler_stream():
