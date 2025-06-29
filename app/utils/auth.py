@@ -1,12 +1,21 @@
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 import os
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if request.url.path.startswith("/docs") or request.url.path.startswith("/openapi.json") or request.url.path.startswith("/r") or request.url.path.startswith("/home.html") or request.url.path.startswith("/static"):
+        # ✅ Allow unauthenticated OPTIONS requests for CORS
+        if request.method == "OPTIONS":
             return await call_next(request)
 
+        # ✅ Allow public paths without auth
+        if request.url.path.startswith((
+            "/docs", "/openapi.json", "/r", "/home.html", "/static"
+        )):
+            return await call_next(request)
+
+        # 🔐 Check Bearer Auth
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Unauthorized")

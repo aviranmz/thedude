@@ -94,7 +94,11 @@ async def mcp_status(request: Request):
     }
 
 
-@app.get("/agent-stream")
+@app.get("/tools")
+def get_tool_list():
+    return {"tools": ["flight", "hotel", "car", "insurance", "esim"]}
+
+@app.get("/sse")
 async def agent_stream(user_id: int, message: str, channel: str = "telegram"):
     async def event_generator():
         processing = True
@@ -184,9 +188,13 @@ async def agent_stream(user_id: int, message: str, channel: str = "telegram"):
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache, no-transform",
-            "Content-Encoding": "identity"
+            "Content-Encoding": "identity",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Methods": "*"
         }
     )
+
 
 # 🔧 Respond to OPTIONS preflight (for n8n/parameter fetching)
 @app.options("/agent")
