@@ -222,6 +222,21 @@ async def agent_stream(user_id: int, message: str, channel: str = "telegram"):
         }
     )
 
+@app.get("/agent-stream-debug")
+async def agent_stream_debug(user_id: int, message: str, channel: str = "telegram"):
+    from starlette.background import BackgroundTask
+    from starlette.responses import PlainTextResponse
+
+    buffer = []
+
+    async def capture_stream():
+        async for chunk in agent_stream(user_id, message, channel):
+            buffer.append(chunk)
+
+    await capture_stream()
+    return PlainTextResponse("".join(buffer))
+
+
 
 # 🔧 Respond to OPTIONS preflight (for n8n/parameter fetching)
 @app.options("/agent")
